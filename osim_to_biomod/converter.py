@@ -1,16 +1,15 @@
 import os
 import shutil
-
 from xml.etree import ElementTree
 
-from lxml import etree
 import numpy as np
+from lxml import etree
 
-from .model_classes import Body, Marker, Muscle, Joint
 from .enums import MuscleType, MuscleStateType
+from .mesh_cleaner import transform_polygon_to_triangles
+from .model_classes import Body, Marker, Muscle, Joint
 from .utils import is_ortho_basis, ortho_norm_basis, compute_matrix_rotation, OrthoMatrix
 from .vtp_parser import read_vtp_file, write_vtp_file
-from .mesh_cleaner import transform_polygon_to_triangles
 
 
 class ReadOsim:
@@ -69,6 +68,8 @@ class ReadOsim:
                     raise RuntimeError("Lengths units must be in meters.")
             elif element.tag == "force_units":
                 self.force_units = element.text
+            elif element.tag == "ModelVisualPreferences":
+                print("ModelVisualPreferences are not supported in biomod. They will be ignored.")
             else:
                 raise RuntimeError(
                     f"Element {element.tag} not recognize. Please verify your xml file or send an issue"
@@ -330,7 +331,7 @@ class WriteBiomod:
         self.write("\n\t\tendviapoint")
         self.write("\n")
 
-    def write_generic_segment(self, name, parent, rt_in_matrix, frame_offset=None):
+    def write_generic_segment(self, name: str, parent: str, rt_in_matrix: int, frame_offset=None):
         self.write(f"\t// Segment\n")
         self.write(f"\tsegment {name}\n")
         self.write(f"\t\tparent {parent} \n")
@@ -655,14 +656,16 @@ class WriteBiomod:
             # segment to cancel axis effects
             self.write("\n    // Segment to cancel transformation bases effect.\n")
             rotomatrix.set_rotation_matrix(np.linalg.inv(axis_offset))
-            body_name = body.name + "_reset_axis"
-            self.write_virtual_segment(
-                body_name,
-                parent,
-                frame_offset=rotomatrix,
-                rt=1,
-            )
-            parent = body_name
+
+            if not rotomatrix.has_no_transformation():
+                body_name = body.name + "_reset_axis"
+                self.write_virtual_segment(
+                    body_name,
+                    parent,
+                    frame_offset=rotomatrix,
+                    rt=1,
+                )
+                parent = body_name
 
         if parent is None:
             raise RuntimeError(
@@ -674,22 +677,8 @@ class WriteBiomod:
         body.mesh = body.mesh if len(body.mesh) != 0 else [None]
         body.mesh_color = body.mesh_color if len(body.mesh_color) != 0 else [None]
         body.mesh_scale_factor = body.mesh_scale_factor if len(body.mesh_scale_factor) != 0 else [None]
-        for i, virt_body in enumerate(body.virtual_body):
-            if i > 0:
-                body_name = virt_body
-                self.write_virtual_segment(
-                    body_name,
-                    parent,
-                    frame_offset=frame_offset,
-                    mesh_file=f"{mesh_dir}/{body.mesh[i]}",
-                    mesh_color=body.mesh_color[i],
-                    mesh_scale=body.mesh_scale_factor[i],
-                    rt=0,
-                )
-                frame_offset = None
-                parent = body_name
+
         self.write("\n    //True segment where are applied inertial values.\n")
-        mesh_file = f"{mesh_dir}/{body.mesh[0]}" if body.mesh[0] else None
         self.write_true_segment(
             body.name,
             parent,
@@ -697,11 +686,31 @@ class WriteBiomod:
             com=body.mass_center,
             mass=body.mass,
             inertia=body.inertia,
-            mesh_file=mesh_file,
+            mesh_file=f"{mesh_dir}/{body.mesh[0]}" if body.mesh[0] else None,
             mesh_color=body.mesh_color[0],
             mesh_scale=body.mesh_scale_factor[0],
             rt=0,
         )
+        print(body.mesh)
+        self.write_segments_with_a_geometry_only(body, body.name, mesh_dir)
+
+    def write_segments_with_a_geometry_only(self, body, parent, mesh_dir):
+        for i, virt_body in enumerate(body.virtual_body):
+            if i == 0:
+                # ignore the first body as already printed as a true segment
+                continue
+
+            body_name = virt_body
+            print(f"{body.mesh[i]}")
+            self.write_virtual_segment(
+                body_name,
+                parent,
+                frame_offset=body.mesh_offset[i],
+                mesh_file=f"{mesh_dir}/{body.mesh[i]}",
+                mesh_color=body.mesh_color[i],
+                mesh_scale=body.mesh_scale_factor[i],
+                rt=1,
+            )
 
 
 class Converter:
