@@ -1,0 +1,79 @@
+<SpatialTransform>
+    <!--3 Axes for rotations are listed first.-->
+    <TransformAxis name="rotation1">
+        <!--Names of the coordinates that serve as the independent variables         of the transform function.-->
+        <coordinates>specific_coordinate_to_put_here</coordinates>
+        <!--Rotation or translation axis for the transform. On z axis for PinJoint.-->
+        <axis>0 0 1</axis>
+        <!--Transform function of the generalized coordinates used to        represent the amount of displacement along a specified axis.-->
+        <LinearFunction name="function">
+            <coefficients> 1 0</coefficients>
+        </LinearFunction>
+    </TransformAxis>
+    <TransformAxis name="rotation2">
+        <!--Names of the coordinates that serve as the independent variables         of the transform function.-->
+        <coordinates></coordinates>
+        <!--Rotation or translation axis for the transform.-->
+        <axis>0 1 0</axis>
+        <!--Transform function of the generalized coordinates used to        represent the amount of displacement along a specified axis.-->
+        <Constant name="function">
+            <value>0</value>
+        </Constant>
+    </TransformAxis>
+    <TransformAxis name="rotation3">
+        <!--Names of the coordinates that serve as the independent variables         of the transform function.-->
+        <coordinates></coordinates>
+        <!--Rotation or translation axis for the transform.-->
+        <axis>1 0 0</axis>
+        <!--Transform function of the generalized coordinates used to        represent the amount of displacement along a specified axis.-->
+        <Constant name="function">
+            <value>0</value>
+        </Constant>
+    </TransformAxis>
+    <!--3 Axes for translations are listed next.-->
+    <TransformAxis name="translation1">
+        <!--Names of the coordinates that serve as the independent variables         of the transform function.-->
+        <coordinates></coordinates>
+        <!--Rotation or translation axis for the transform.-->
+        <axis>1 0 0</axis>
+        <!--Transform function of the generalized coordinates used to        represent the amount of displacement along a specified axis.-->
+        <MultiplierFunction name="function">
+            <function>
+                <Constant name="function">
+                    <value>0</value>
+                </Constant>
+            </function>
+            <scale>1</scale>
+        </MultiplierFunction>
+    </TransformAxis>
+    <TransformAxis name="translation2">
+        <!--Names of the coordinates that serve as the independent variables         of the transform function.-->
+        <coordinates></coordinates>
+        <!--Rotation or translation axis for the transform.-->
+        <axis>0 1 0</axis>
+        <!--Transform function of the generalized coordinates used to        represent the amount of displacement along a specified axis.-->
+        <MultiplierFunction name="function">
+            <function>
+                <Constant name="function">
+                    <value>0</value>
+                </Constant>
+            </function>
+            <scale>1</scale>
+        </MultiplierFunction>
+    </TransformAxis>
+    <TransformAxis name="translation3">
+        <!--Names of the coordinates that serve as the independent variables         of the transform function.-->
+        <coordinates></coordinates>
+        <!--Rotation or translation axis for the transform.-->
+        <axis>0 0 1</axis>
+        <!--Transform function of the generalized coordinates used to        represent the amount of displacement along a specified axis.-->
+        <MultiplierFunction name="function">
+            <function>
+                <Constant name="function">
+                    <value>0</value>
+                </Constant>
+            </function>
+            <scale>1</scale>
+        </MultiplierFunction>
+    </TransformAxis>
+</SpatialTransform>

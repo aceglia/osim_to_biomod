@@ -78,16 +78,25 @@ class Joint:
             for coordinate in element.find("coordinates").findall("Coordinate"):
                 self.coordinates.append(Coordinate().get_coordinate_attrib(coordinate, ignore_fixed, ignore_clamped))
 
-        if element.find("SpatialTransform") is not None:
+        if self.type == 'PinJoint' or self.type == 'UniversalJoint':
+            element = self._add_spatial_transform_from_template(self.type, element)
+
+        if element.find("SpatialTransform") is not None or self.type == 'PinJoint':
+            coordinate_names = [coordinate.name for coordinate in self.coordinates]
             for i, transform in enumerate(element.find("SpatialTransform").findall("TransformAxis")):
                 spat_transform = SpatialTransform().get_transform_attrib(transform)
                 if i < 3:
                     spat_transform.type = "rotation"
                 else:
                     spat_transform.type = "translation"
-                for coordinate in self.coordinates:
-                    if coordinate.name == spat_transform.coordinate_name:
-                        spat_transform.coordinate = coordinate
+                if self.type == 'PinJoint' or self.type == 'UniversalJoint':
+                    if i < len(coordinate_names):
+                        spat_transform.coordinate_name = coordinate_names[i]
+                        spat_transform.coordinate = self.coordinates[i]
+                else:
+                    for coordinate in self.coordinates:
+                        if coordinate.name == spat_transform.coordinate_name:
+                            spat_transform.coordinate = coordinate
                 self.function = spat_transform.function
                 self.spatial_transform.append(spat_transform)
 
@@ -104,6 +113,20 @@ class Joint:
                 offset_rot = [-float(i) for i in offset_rot.split(" ")]
                 self.child_offset_trans, self.child_offset_rot = self._convert_offset_child(offset_rot, offset_trans)
         return self
+
+    def _add_spatial_transform_from_template(self, element_type, element):
+        # read xml template file
+        from xml.etree import ElementTree
+        # get current directory
+        import os
+
+        template_file = element_type.lower() + "_template.xml"
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        self.template_tree = ElementTree.parse(os.path.join(current_dir, template_file))
+        self.template = self.template_tree.getroot()
+        element.append(self.template)
+        return element
+
 
     @staticmethod
     def _convert_offset_child(offset_child_rot, offset_child_trans):
@@ -163,6 +186,9 @@ class SpatialTransform:
             if "Function" in elt.tag and len(elt.text) != 0:
                 self.function = True
         return self
+
+    def spatial_transform_pin_joint(self, joint):
+        pass
 
 
 class Muscle:
